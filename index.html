@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>红豆泥 | Azuki Hatsuno</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="site-frame">
+      <header class="brand-header">
+        <h1>红豆泥</h1>
+        <p>Azuki Hatsuno</p>
+      </header>
+
+      <nav class="tabs" aria-label="首页分类">
+        <a class="tab is-active" href="#weather">天气</a>
+        <a class="tab" href="#notice">揭示板</a>
+      </nav>
+
+      <section id="weather" class="weather-grid" aria-label="两地天气与时间">
+        <article class="city-card" data-city="hangzhou">
+          <div class="city-info">
+            <div class="city-heading">
+              <div>
+                <span class="city-kicker">天气与时间</span>
+                <h2 lang="ja">杭州</h2>
+              </div>
+              <time class="date" data-field="date">加载中</time>
+            </div>
+            <p class="time">
+              <span data-field="time">--:--:--</span>
+              <span class="timezone" data-field="timezone">北京时间</span>
+            </p>
+            <p class="lunar" data-field="lunar">农历加载中</p>
+            <p class="weather-note" data-field="weather">天气加载中</p>
+          </div>
+          <div class="clock-wrap">
+            <div class="clock" aria-hidden="true">
+              <span class="hand hour"></span>
+              <span class="hand minute"></span>
+              <span class="hand second"></span>
+              <span class="center-dot"></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="city-card" data-city="hadano">
+          <div class="city-info">
+            <div class="city-heading">
+              <div>
+                <span class="city-kicker">天气与时间</span>
+                <h2 lang="ja">秦野</h2>
+              </div>
+              <time class="date" data-field="date">加载中</time>
+            </div>
+            <p class="time">
+              <span data-field="time">--:--:--</span>
+              <span class="timezone" data-field="timezone">东京时间</span>
+            </p>
+            <p class="lunar" data-field="lunar">农历加载中</p>
+            <p class="weather-note" data-field="weather">天气加载中</p>
+          </div>
+          <div class="clock-wrap">
+            <div class="clock" aria-hidden="true">
+              <span class="hand hour"></span>
+              <span class="hand minute"></span>
+              <span class="hand second"></span>
+              <span class="center-dot"></span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="notice" class="notice-section" aria-label="揭示板">
+        <div class="notice-heading">
+          <h2>揭示板</h2>
+          <span id="noteStatus">读取 note.txt</span>
+        </div>
+        <div class="note-board" id="noteBoard">内容加载中</div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
