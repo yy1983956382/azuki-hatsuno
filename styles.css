@@ -404,6 +404,10 @@ body {
     font-size: clamp(2.15rem, 12vw, 3.4rem);
   }
 
+  .city-heading {
+    padding-right: clamp(88px, 23vw, 128px);
+  }
+
   .date {
     font-size: clamp(0.86rem, 3.4vw, 1.05rem);
   }
@@ -431,7 +435,6 @@ body {
   .weather-note {
     margin-top: 12px;
     padding-top: 10px;
-    padding-right: clamp(96px, 30vw, 160px);
     font-size: 0.92rem;
     line-height: 1.45;
   }
@@ -439,13 +442,13 @@ body {
   .clock-wrap {
     position: absolute;
     right: 16px;
-    bottom: 16px;
+    top: 16px;
     z-index: 1;
     display: block;
   }
 
   .clock {
-    width: clamp(88px, 27vw, 150px);
+    width: clamp(72px, 20vw, 112px);
   }
 
   .clock::before {
@@ -478,13 +481,9 @@ body {
     padding: 14px;
   }
 
-  .weather-note {
-    padding-right: clamp(82px, 28vw, 122px);
-  }
-
   .clock-wrap {
     right: 12px;
-    bottom: 12px;
+    top: 12px;
   }
 
   .notice-section {
@@ -499,6 +498,7 @@ body {
   .city-heading {
     display: grid;
     gap: 6px;
+    padding-right: clamp(72px, 22vw, 104px);
   }
 
   .time {
@@ -520,7 +520,7 @@ body {
   }
 
   .clock {
-    width: clamp(78px, 25vw, 118px);
+    width: clamp(64px, 19vw, 92px);
   }
 }
 
@@ -535,6 +535,6 @@ body {
 
   .clock-wrap {
     right: 10px;
-    bottom: 10px;
+    top: 10px;
   }
 }
