@@ -372,36 +372,105 @@ body {
     padding: 18px;
   }
 
+  .brand-header {
+    padding: 10px 2px 20px;
+  }
+
   .tabs {
     overflow-x: auto;
   }
 
   .weather-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .city-card {
-    max-width: 520px;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    max-width: 640px;
     margin-inline: auto;
+    padding: 20px;
+    gap: 10px;
+  }
+
+  .city-card::after {
+    background:
+      linear-gradient(180deg, rgba(14, 18, 21, 0.72) 0%, rgba(14, 18, 21, 0.28) 48%, rgba(14, 18, 21, 0.78) 100%),
+      linear-gradient(90deg, rgba(14, 18, 21, 0.58) 0%, rgba(14, 18, 21, 0.08) 72%);
+  }
+
+  .city-heading h2 {
+    font-size: clamp(2.15rem, 12vw, 3.4rem);
+  }
+
+  .date {
+    font-size: clamp(0.86rem, 3.4vw, 1.05rem);
+  }
+
+  .time {
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .time [data-field="time"] {
+    font-size: clamp(1.65rem, 8vw, 2.55rem);
+  }
+
+  .timezone {
+    min-height: 25px;
+    padding: 2px 8px;
+    font-size: 0.78rem;
+  }
+
+  .lunar {
+    margin-top: 8px;
+    font-size: 0.86rem;
+  }
+
+  .weather-note {
+    margin-top: 12px;
+    padding-top: 10px;
+    font-size: 0.92rem;
+    line-height: 1.45;
   }
 
   .clock {
-    width: min(58vw, 220px);
+    width: clamp(88px, 27vw, 150px);
+  }
+
+  .clock::before {
+    inset: 12px;
+  }
+
+  .center-dot {
+    width: 11px;
+    height: 11px;
+    border-width: 2px;
   }
 }
 
 @media (max-width: 520px) {
   .site-frame {
-    padding: 14px;
+    width: calc(100vw - 16px);
+    margin: 8px auto;
+    padding: 12px;
   }
 
   .brand-header {
-    padding-top: 8px;
+    padding-top: 6px;
   }
 
-  .city-card,
+  .brand-header h1 {
+    font-size: clamp(2rem, 14vw, 3.6rem);
+  }
+
+  .city-card {
+    padding: 14px;
+  }
+
   .notice-section {
-    padding: 20px;
+    padding: 18px;
   }
 
   .tab {
@@ -411,15 +480,38 @@ body {
 
   .city-heading {
     display: grid;
-    gap: 10px;
+    gap: 6px;
   }
 
   .time {
-    display: grid;
-    gap: 8px;
+    display: flex;
+    gap: 7px;
   }
 
   .time [data-field="time"] {
-    font-size: clamp(2rem, 12vw, 3rem);
+    font-size: clamp(1.55rem, 8.5vw, 2.3rem);
+  }
+
+  .city-kicker {
+    margin-bottom: 5px;
+    font-size: 0.72rem;
+  }
+
+  .city-heading h2 {
+    font-size: clamp(2rem, 13vw, 3rem);
+  }
+
+  .clock {
+    width: clamp(78px, 25vw, 118px);
+  }
+}
+
+@media (max-width: 380px) {
+  .city-card {
+    aspect-ratio: 1.18 / 1;
+  }
+
+  .weather-note {
+    display: none;
   }
 }
