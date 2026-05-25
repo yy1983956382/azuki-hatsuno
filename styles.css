@@ -387,11 +387,11 @@ body {
 
   .city-card {
     aspect-ratio: 4 / 3;
+    display: block;
     width: 100%;
     max-width: 640px;
     margin-inline: auto;
     padding: 20px;
-    gap: 10px;
   }
 
   .city-card::after {
@@ -431,8 +431,17 @@ body {
   .weather-note {
     margin-top: 12px;
     padding-top: 10px;
+    padding-right: clamp(96px, 30vw, 160px);
     font-size: 0.92rem;
     line-height: 1.45;
+  }
+
+  .clock-wrap {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1;
+    display: block;
   }
 
   .clock {
@@ -467,6 +476,15 @@ body {
 
   .city-card {
     padding: 14px;
+  }
+
+  .weather-note {
+    padding-right: clamp(82px, 28vw, 122px);
+  }
+
+  .clock-wrap {
+    right: 12px;
+    bottom: 12px;
   }
 
   .notice-section {
@@ -513,5 +531,10 @@ body {
 
   .weather-note {
     display: none;
+  }
+
+  .clock-wrap {
+    right: 10px;
+    bottom: 10px;
   }
 }
