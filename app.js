@@ -22,26 +22,40 @@ const cities = {
   },
 };
 
-const cityPhotos = {
-  hangzhou: [
-    "photolibrary/hangzhou/hangzhou01.jpg",
-    "photolibrary/hangzhou/hangzhou02.jpg",
-    "photolibrary/hangzhou/hangzhou03.jpg",
-    "photolibrary/hangzhou/hangzhou04.jpg",
-    "photolibrary/hangzhou/hangzhou05.jpg",
-    "photolibrary/hangzhou/hangzhou06.jpg",
-  ],
-  hadano: [
-    "photolibrary/kanagawahadano/hadano01.jpg",
-    "photolibrary/kanagawahadano/hadano02.jpg",
-    "photolibrary/kanagawahadano/hadano03.jpg",
-    "photolibrary/kanagawahadano/hadano04.jpg",
-    "photolibrary/kanagawahadano/hadano05.jpg",
-    "photolibrary/kanagawahadano/hadano06.jpg",
-    "photolibrary/kanagawahadano/hadano07.jpg",
-    "photolibrary/kanagawahadano/hadano08.jpg",
-    "photolibrary/kanagawahadano/hadano09.jpg",
-  ],
+const githubRepo = {
+  owner: "yy1983956382",
+  name: "azuki-hatsuno",
+  branch: "main",
+};
+
+const imageFilePattern = /\.(avif|gif|jpe?g|png|webp)$/i;
+
+const cityPhotoFolders = {
+  hangzhou: {
+    path: "photolibrary/hangzhou",
+    fallback: [
+      "photolibrary/hangzhou/hangzhou01.jpg",
+      "photolibrary/hangzhou/hangzhou02.jpg",
+      "photolibrary/hangzhou/hangzhou03.jpg",
+      "photolibrary/hangzhou/hangzhou04.jpg",
+      "photolibrary/hangzhou/hangzhou05.jpg",
+      "photolibrary/hangzhou/hangzhou06.jpg",
+    ],
+  },
+  hadano: {
+    path: "photolibrary/kanagawahadano",
+    fallback: [
+      "photolibrary/kanagawahadano/hadano01.jpg",
+      "photolibrary/kanagawahadano/hadano02.jpg",
+      "photolibrary/kanagawahadano/hadano03.jpg",
+      "photolibrary/kanagawahadano/hadano04.jpg",
+      "photolibrary/kanagawahadano/hadano05.jpg",
+      "photolibrary/kanagawahadano/hadano06.jpg",
+      "photolibrary/kanagawahadano/hadano07.jpg",
+      "photolibrary/kanagawahadano/hadano08.jpg",
+      "photolibrary/kanagawahadano/hadano09.jpg",
+    ],
+  },
 };
 
 const weatherText = {
@@ -147,14 +161,43 @@ const chineseDigitMap = {
   十: 10,
 };
 
-function setRandomCityPhotos() {
-  Object.entries(cityPhotos).forEach(([key, photos]) => {
-    const card = document.querySelector(`[data-city="${key}"]`);
-    if (!card || photos.length === 0) return;
+function setRandomPhoto(card, photos) {
+  if (!card || !photos.length) return;
+  const photo = photos[Math.floor(Math.random() * photos.length)];
+  card.style.setProperty("--city-photo", `url("${photo}")`);
+}
 
-    const photo = photos[Math.floor(Math.random() * photos.length)];
-    card.style.setProperty("--city-photo", `url("${photo}")`);
-  });
+function encodeRepoPath(path) {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+async function loadGitHubFolderImages(folderPath) {
+  const apiUrl =
+    `https://api.github.com/repos/${githubRepo.owner}/${githubRepo.name}` +
+    `/contents/${encodeRepoPath(folderPath)}?ref=${githubRepo.branch}`;
+  const items = await fetchJson(apiUrl, 3500);
+
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((item) => item.type === "file" && imageFilePattern.test(item.name))
+    .sort((a, b) => a.name.localeCompare(b.name, "zh-CN", { numeric: true }))
+    .map((item) => item.download_url || item.path);
+}
+
+async function setRandomCityPhotos() {
+  await Promise.all(
+    Object.entries(cityPhotoFolders).map(async ([key, config]) => {
+      const card = document.querySelector(`[data-city="${key}"]`);
+      setRandomPhoto(card, config.fallback);
+
+      try {
+        const photos = await loadGitHubFolderImages(config.path);
+        setRandomPhoto(card, photos.length ? photos : config.fallback);
+      } catch {
+        setRandomPhoto(card, config.fallback);
+      }
+    }),
+  );
 }
 
 function parseChineseNumber(text) {
