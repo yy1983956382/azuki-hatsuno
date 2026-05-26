@@ -5,6 +5,8 @@ const cities = {
     timezoneLabel: "北京时间",
     latitude: 30.2741,
     longitude: 120.1551,
+    weatherProvider: "cma",
+    cmaStationId: "58457",
   },
   hadano: {
     name: "秦野",
@@ -12,6 +14,11 @@ const cities = {
     timezoneLabel: "东京时间",
     latitude: 35.3747,
     longitude: 139.2202,
+    weatherProvider: "jma",
+    jmaOfficeCode: "140000",
+    jmaAreaName: "西部",
+    jmaTempAreaName: "小田原",
+    jmaAmedasStationId: "46166",
   },
 };
 
@@ -63,6 +70,15 @@ const rainWeatherCodes = new Set([51, 53, 55, 61, 63, 65, 80, 81, 82]);
 const snowWeatherCodes = new Set([71, 73, 75]);
 const fogWeatherCodes = new Set([45, 48]);
 
+function getTemperatureAdvice(temp) {
+  if (!Number.isFinite(temp)) return "出门前留意天气变化";
+  if (temp >= 30) return "注意补水，少晒太久";
+  if (temp >= 24) return "适合散步，记得补水";
+  if (temp >= 16) return "适合散步，晚点备件薄外套";
+  if (temp >= 9) return "加件外套，别着凉";
+  return "天冷加衣，注意保暖";
+}
+
 function getWeatherAdvice(code, temp) {
   if (code === 95) return "雷雨时先避一避，注意安全";
   if (rainWeatherCodes.has(code)) {
@@ -71,11 +87,17 @@ function getWeatherAdvice(code, temp) {
   if (snowWeatherCodes.has(code)) return "天冷加衣，脚下小心";
   if (fogWeatherCodes.has(code)) return "视线不好，出行慢一点";
 
-  if (temp >= 30) return "注意补水，少晒太久";
-  if (temp >= 24) return "适合散步，记得补水";
-  if (temp >= 16) return "适合散步，晚点备件薄外套";
-  if (temp >= 9) return "加件外套，别着凉";
-  return "天冷加衣，注意保暖";
+  return getTemperatureAdvice(temp);
+}
+
+function getWeatherAdviceFromText(summary, temp) {
+  if (/雷/.test(summary)) return "雷雨时先避一避，注意安全";
+  if (/雨|降水|阵雨/.test(summary)) {
+    return temp <= 12 ? "记得带伞，也加件外套" : "记得带伞，路上慢一点";
+  }
+  if (/雪/.test(summary)) return "天冷加衣，脚下小心";
+  if (/雾|霧/.test(summary)) return "视线不好，出行慢一点";
+  return getTemperatureAdvice(temp);
 }
 
 const lunarMonthNames = [
@@ -255,30 +277,143 @@ function updateTime() {
   });
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Weather request failed: ${url}`);
+  return response.json();
+}
+
+async function fetchText(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Weather request failed: ${url}`);
+  return response.text();
+}
+
+function getLocalHour(timezone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  return Number.isFinite(hour) ? hour % 24 : 12;
+}
+
+function buildWeatherText({ summary, temp, advice }) {
+  const weather = summary || "天气变化中";
+  const temperature = Number.isFinite(temp) ? `${Math.round(temp)}℃` : "温度暂缺";
+  return `${weather}，${temperature}，${advice || getWeatherAdviceFromText(weather, temp)}`;
+}
+
+async function fetchCmaWeather(city) {
+  const data = await fetchJson(
+    `https://weather.cma.cn/api/weather/view?stationid=${city.cmaStationId}`,
+  );
+  if (data.code !== 0 || !data.data) throw new Error("CMA data unavailable");
+
+  const localHour = getLocalHour(city.timezone);
+  const today = data.data.daily?.[0] || {};
+  const summary = localHour >= 18 || localHour < 6 ? today.nightText : today.dayText;
+  const temp = Number(data.data.now?.temperature ?? today.high ?? today.low);
+
+  return {
+    summary,
+    temp,
+    source: "中国气象局",
+  };
+}
+
+function normalizeJmaWeather(text) {
+  const compact = (text || "").replace(/\s+/g, "");
+  if (/雷/.test(compact)) return /雨/.test(compact) ? "雷雨" : "可能有雷";
+  if (/大雨/.test(compact)) return "大雨";
+  if (/雨/.test(compact)) return /晴/.test(compact) ? "晴转有雨" : "有雨";
+  if (/雪/.test(compact)) return "有雪";
+  if (/霧/.test(compact)) return "有雾";
+  if (/くもり|曇/.test(compact)) return /晴/.test(compact) ? "晴转多云" : "多云";
+  if (/晴/.test(compact)) return "晴朗";
+  return text || "天气变化中";
+}
+
+async function fetchJmaAmedasTemp(stationId) {
+  const latest = (await fetchText("https://www.jma.go.jp/bosai/amedas/data/latest_time.txt")).trim();
+  const timestamp = latest.replace(/\D/g, "").slice(0, 14);
+  const data = await fetchJson(`https://www.jma.go.jp/bosai/amedas/data/map/${timestamp}.json`);
+  const temp = Number(data[stationId]?.temp?.[0]);
+  return Number.isFinite(temp) ? temp : null;
+}
+
+function getJmaForecastTemp(data, city) {
+  const tempSeries = data[0]?.timeSeries?.find((series) =>
+    series.areas?.some((area) => area.temps),
+  );
+  const tempArea =
+    tempSeries?.areas?.find((area) => area.area?.name === city.jmaTempAreaName) ||
+    tempSeries?.areas?.[0];
+  const temps = (tempArea?.temps || []).map(Number).filter(Number.isFinite);
+  return temps.length ? temps[temps.length - 1] : null;
+}
+
+async function fetchJmaWeather(city) {
+  const forecast = await fetchJson(
+    `https://www.jma.go.jp/bosai/forecast/data/forecast/${city.jmaOfficeCode}.json`,
+  );
+  const weatherArea =
+    forecast[0]?.timeSeries?.[0]?.areas?.find((area) => area.area?.name === city.jmaAreaName) ||
+    forecast[0]?.timeSeries?.[0]?.areas?.[0];
+  const summary = normalizeJmaWeather(weatherArea?.weathers?.[0]);
+
+  let temp = await fetchJmaAmedasTemp(city.jmaAmedasStationId).catch(() => null);
+  if (!Number.isFinite(temp)) temp = getJmaForecastTemp(forecast, city);
+
+  return {
+    summary,
+    temp,
+    source: "日本气象厅",
+  };
+}
+
+async function fetchOpenMeteoWeather(city) {
+  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  url.search = new URLSearchParams({
+    latitude: city.latitude,
+    longitude: city.longitude,
+    current: "temperature_2m,weather_code",
+    timezone: city.timezone,
+  });
+
+  const data = await fetchJson(url);
+  const code = data.current.weather_code;
+  const temp = Math.round(data.current.temperature_2m);
+  const summary = weatherText[code] || "天气变化中";
+
+  return {
+    summary,
+    temp,
+    advice: getWeatherAdvice(code, temp),
+    source: "Open-Meteo",
+  };
+}
+
+async function fetchWeather(city) {
+  if (city.weatherProvider === "cma") return fetchCmaWeather(city);
+  if (city.weatherProvider === "jma") return fetchJmaWeather(city);
+  return fetchOpenMeteoWeather(city);
+}
+
 async function loadWeather() {
   await Promise.all(
     Object.entries(cities).map(async ([key, city]) => {
       const card = document.querySelector(`[data-city="${key}"]`);
       const weatherNode = card.querySelector('[data-field="weather"]');
-      const url = new URL("https://api.open-meteo.com/v1/forecast");
-      url.search = new URLSearchParams({
-        latitude: city.latitude,
-        longitude: city.longitude,
-        current: "temperature_2m,weather_code",
-        timezone: city.timezone,
-      });
 
       try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Weather request failed");
-        const data = await response.json();
-        const code = data.current.weather_code;
-        const temp = Math.round(data.current.temperature_2m);
-        const summary = weatherText[code] || "天气变化中";
-        const advice = getWeatherAdvice(code, temp);
-        weatherNode.textContent = `${summary}，${temp}℃，${advice}`;
+        const data = await fetchWeather(city).catch(() => fetchOpenMeteoWeather(city));
+        weatherNode.textContent = buildWeatherText(data);
+        weatherNode.title = `天气来源：${data.source}`;
       } catch {
         weatherNode.textContent = "天气暂时加载失败，稍后再试";
+        weatherNode.title = "天气来源暂时不可用";
       }
     }),
   );
