@@ -5,7 +5,7 @@ const cities = {
     timezoneLabel: "北京时间",
     latitude: 30.2741,
     longitude: 120.1551,
-    weatherProvider: "cma",
+    weatherProvider: "fast",
     cmaStationId: "58457",
   },
   hadano: {
@@ -277,14 +277,30 @@ function updateTime() {
   });
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, { cache: "no-store" });
+const weatherRequestTimeout = 4500;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = weatherRequestTimeout) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function fetchJson(url, timeoutMs) {
+  const response = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
   if (!response.ok) throw new Error(`Weather request failed: ${url}`);
   return response.json();
 }
 
-async function fetchText(url) {
-  const response = await fetch(url, { cache: "no-store" });
+async function fetchText(url, timeoutMs) {
+  const response = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
   if (!response.ok) throw new Error(`Weather request failed: ${url}`);
   return response.text();
 }
@@ -308,6 +324,7 @@ function buildWeatherText({ summary, temp, advice }) {
 async function fetchCmaWeather(city) {
   const data = await fetchJson(
     `https://weather.cma.cn/api/weather/view?stationid=${city.cmaStationId}`,
+    3000,
   );
   if (data.code !== 0 || !data.data) throw new Error("CMA data unavailable");
 
@@ -382,7 +399,7 @@ async function fetchOpenMeteoWeather(city) {
     timezone: city.timezone,
   });
 
-  const data = await fetchJson(url);
+  const data = await fetchJson(url, 3500);
   const code = data.current.weather_code;
   const temp = Math.round(data.current.temperature_2m);
   const summary = weatherText[code] || "天气变化中";
@@ -395,9 +412,40 @@ async function fetchOpenMeteoWeather(city) {
   };
 }
 
+function fetchFirstAvailable(fetchers) {
+  return new Promise((resolve, reject) => {
+    const errors = [];
+
+    fetchers.forEach((fetcher) => {
+      fetcher()
+        .then(resolve)
+        .catch((error) => {
+          errors.push(error);
+          if (errors.length === fetchers.length) reject(errors[0]);
+        });
+    });
+  });
+}
+
 async function fetchWeather(city) {
-  if (city.weatherProvider === "cma") return fetchCmaWeather(city);
-  if (city.weatherProvider === "jma") return fetchJmaWeather(city);
+  if (city.weatherProvider === "fast") {
+    return fetchFirstAvailable([
+      () => fetchOpenMeteoWeather(city),
+      () => fetchCmaWeather(city),
+    ]);
+  }
+
+  if (city.weatherProvider === "cma") {
+    return fetchFirstAvailable([
+      () => fetchCmaWeather(city),
+      () => fetchOpenMeteoWeather(city),
+    ]);
+  }
+
+  if (city.weatherProvider === "jma") {
+    return fetchJmaWeather(city).catch(() => fetchOpenMeteoWeather(city));
+  }
+
   return fetchOpenMeteoWeather(city);
 }
 
@@ -408,7 +456,7 @@ async function loadWeather() {
       const weatherNode = card.querySelector('[data-field="weather"]');
 
       try {
-        const data = await fetchWeather(city).catch(() => fetchOpenMeteoWeather(city));
+        const data = await fetchWeather(city);
         weatherNode.textContent = buildWeatherText(data);
         weatherNode.title = `天气来源：${data.source}`;
       } catch {
