@@ -5,8 +5,14 @@ const cities = {
     timezoneLabel: "北京时间",
     latitude: 30.2741,
     longitude: 120.1551,
-    weatherProvider: "fast",
+    weatherProvider: "simple",
     weatherLocation: "Hangzhou",
+    fallbackWeather: {
+      summary: "天气同步中",
+      temp: null,
+      advice: "出门前留意天气",
+      source: "本地兜底",
+    },
     cmaStationId: "58457",
   },
   hadano: {
@@ -328,7 +334,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = weatherRequestTim
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    return await fetch(url, {
+    return await fetch(String(url), {
       ...options,
       signal: controller.signal,
     });
@@ -363,6 +369,15 @@ function buildWeatherText({ summary, temp, advice }) {
   const weather = summary || "天气变化中";
   const temperature = Number.isFinite(temp) ? `${Math.round(temp)}℃` : "温度暂缺";
   return `${weather}，${temperature}，${advice || getWeatherAdviceFromText(weather, temp)}`;
+}
+
+function getFallbackWeather(city) {
+  return city.fallbackWeather || {
+    summary: "天气同步中",
+    temp: null,
+    advice: "出门前留意天气",
+    source: "本地兜底",
+  };
 }
 
 async function fetchCmaWeather(city) {
@@ -485,6 +500,22 @@ async function fetchWttrWeather(city) {
   };
 }
 
+async function fetchWttrTextWeather(city) {
+  const location = encodeURIComponent(city.weatherLocation || city.name);
+  const text = (await fetchText(`https://wttr.in/${location}?format=%C,%t`, 2500)).trim();
+  const [summaryText, tempText] = text.split(",");
+  const temp = Number((tempText || "").replace(/[^\d.-]/g, ""));
+  const summary = normalizeWttrWeather(summaryText);
+
+  if (!summary || !Number.isFinite(temp)) throw new Error("wttr text data unavailable");
+
+  return {
+    summary,
+    temp,
+    source: "wttr.in",
+  };
+}
+
 function fetchFirstAvailable(fetchers) {
   return new Promise((resolve, reject) => {
     const errors = [];
@@ -501,6 +532,14 @@ function fetchFirstAvailable(fetchers) {
 }
 
 async function fetchWeather(city) {
+  if (city.weatherProvider === "simple") {
+    return fetchFirstAvailable([
+      () => fetchWttrTextWeather(city),
+      () => fetchWttrWeather(city),
+      () => fetchOpenMeteoWeather(city),
+    ]).catch(() => getFallbackWeather(city));
+  }
+
   if (city.weatherProvider === "fast") {
     return fetchFirstAvailable([
       () => fetchWttrWeather(city),
@@ -534,8 +573,9 @@ async function loadWeather() {
         weatherNode.textContent = buildWeatherText(data);
         weatherNode.title = `天气来源：${data.source}`;
       } catch {
-        weatherNode.textContent = `${city.name}天气同步中，出门前留意天气`;
-        weatherNode.title = "天气来源暂时不可用";
+        const data = getFallbackWeather(city);
+        weatherNode.textContent = buildWeatherText(data);
+        weatherNode.title = `天气来源：${data.source}`;
       }
     }),
   );
