@@ -6,6 +6,7 @@ const cities = {
     latitude: 30.2741,
     longitude: 120.1551,
     weatherProvider: "fast",
+    weatherLocation: "Hangzhou",
     cmaStationId: "58457",
   },
   hadano: {
@@ -395,6 +396,18 @@ function normalizeJmaWeather(text) {
   return text || "天气变化中";
 }
 
+function normalizeWttrWeather(text) {
+  const compact = (text || "").toLowerCase();
+  if (/thunder|雷/.test(compact)) return "雷雨";
+  if (/heavy rain|大雨/.test(compact)) return "大雨";
+  if (/rain|shower|雨/.test(compact)) return "有雨";
+  if (/snow|雪/.test(compact)) return "有雪";
+  if (/fog|mist|雾|霧/.test(compact)) return "有雾";
+  if (/overcast|cloud|阴|多云/.test(compact)) return "多云";
+  if (/sunny|clear|晴/.test(compact)) return "晴朗";
+  return text || "天气变化中";
+}
+
 async function fetchJmaAmedasTemp(stationId) {
   const latest = (await fetchText("https://www.jma.go.jp/bosai/amedas/data/latest_time.txt")).trim();
   const timestamp = latest.replace(/\D/g, "").slice(0, 14);
@@ -455,6 +468,23 @@ async function fetchOpenMeteoWeather(city) {
   };
 }
 
+async function fetchWttrWeather(city) {
+  const location = encodeURIComponent(city.weatherLocation || city.name);
+  const data = await fetchJson(`https://wttr.in/${location}?format=j1&lang=zh-cn`, 3500);
+  const current = data.current_condition?.[0] || {};
+  const summary =
+    current.lang_zh?.[0]?.value ||
+    current.lang_zh_cn?.[0]?.value ||
+    current.weatherDesc?.[0]?.value;
+  const temp = Number(current.temp_C);
+
+  return {
+    summary: normalizeWttrWeather(summary),
+    temp,
+    source: "wttr.in",
+  };
+}
+
 function fetchFirstAvailable(fetchers) {
   return new Promise((resolve, reject) => {
     const errors = [];
@@ -473,6 +503,7 @@ function fetchFirstAvailable(fetchers) {
 async function fetchWeather(city) {
   if (city.weatherProvider === "fast") {
     return fetchFirstAvailable([
+      () => fetchWttrWeather(city),
       () => fetchOpenMeteoWeather(city),
       () => fetchCmaWeather(city),
     ]);
@@ -503,7 +534,7 @@ async function loadWeather() {
         weatherNode.textContent = buildWeatherText(data);
         weatherNode.title = `天气来源：${data.source}`;
       } catch {
-        weatherNode.textContent = "天气暂时加载失败，稍后再试";
+        weatherNode.textContent = `${city.name}天气同步中，出门前留意天气`;
         weatherNode.title = "天气来源暂时不可用";
       }
     }),
