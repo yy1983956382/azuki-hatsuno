@@ -207,6 +207,39 @@ async function setRandomCityPhotos() {
   );
 }
 
+function setWordCorner(entry) {
+  const wordNode = document.querySelector('[data-field="word"]');
+  const phoneticNode = document.querySelector('[data-field="phonetic"]');
+  const zhNode = document.querySelector('[data-field="wordZh"]');
+  const jaNode = document.querySelector('[data-field="wordJa"]');
+  if (!wordNode || !phoneticNode || !zhNode || !jaNode) return;
+
+  wordNode.textContent = entry.word || "wordlibrary";
+  phoneticNode.textContent = entry.phonetic || "";
+  zhNode.textContent = entry.zh || "暂无中文释义";
+  jaNode.textContent = entry.ja || "日本語訳はまだありません";
+}
+
+async function loadWordCorner() {
+  try {
+    const words = await fetchJson(`wordlibrary.json?time=${Date.now()}`, 5000);
+    const usableWords = Array.isArray(words)
+      ? words.filter((entry) => entry.word && (entry.zh || entry.ja))
+      : [];
+    if (!usableWords.length) throw new Error("Word library is empty");
+
+    const entry = usableWords[Math.floor(Math.random() * usableWords.length)];
+    setWordCorner(entry);
+  } catch {
+    setWordCorner({
+      word: "wordlibrary",
+      phonetic: "",
+      zh: "词库暂时无法读取",
+      ja: "単語帳を読み込めません",
+    });
+  }
+}
+
 function parseChineseNumber(text) {
   const value = String(text).replace(/[日月\s]/g, "");
   if (/^\d+$/.test(value)) return Number(value);
@@ -605,6 +638,7 @@ async function loadNote() {
 }
 
 setRandomCityPhotos();
+loadWordCorner();
 updateTime();
 loadWeather();
 loadNote();

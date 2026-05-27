@@ -51,11 +51,17 @@ body {
 
 .brand-header {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  align-items: center;
   gap: 6px;
   padding: 16px 4px 28px;
 }
 
-.brand-header h1 {
+.brand-title {
+  min-width: 0;
+}
+
+.brand-title h1 {
   margin: 0;
   color: var(--red);
   font-size: clamp(2.25rem, 7vw, 5.5rem);
@@ -64,11 +70,60 @@ body {
   line-height: 1;
 }
 
-.brand-header p {
+.brand-title p {
   margin: 0;
   color: #713636;
   font-size: clamp(1.05rem, 2.6vw, 1.65rem);
   font-weight: 500;
+}
+
+.word-corner {
+  justify-self: end;
+  width: 100%;
+  max-width: 360px;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 37, 40, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.word-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.word-term {
+  color: var(--ink);
+  font-size: clamp(1.08rem, 1.8vw, 1.36rem);
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.word-phonetic {
+  color: #713636;
+  font-size: 0.88rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.word-meaning {
+  display: -webkit-box;
+  margin: 8px 0 0;
+  color: var(--muted);
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.word-meaning-ja {
+  color: #4f6158;
 }
 
 .tabs {
@@ -387,7 +442,14 @@ body {
   }
 
   .brand-header {
+    grid-template-columns: 1fr;
+    gap: 14px;
     padding: 10px 2px 20px;
+  }
+
+  .word-corner {
+    justify-self: stretch;
+    max-width: none;
   }
 
   .tabs {
@@ -489,6 +551,19 @@ body {
 
   .brand-header h1 {
     font-size: clamp(2rem, 14vw, 3.6rem);
+  }
+
+  .word-corner {
+    padding: 12px 14px;
+  }
+
+  .word-term {
+    font-size: 1.02rem;
+  }
+
+  .word-phonetic,
+  .word-meaning {
+    font-size: 0.82rem;
   }
 
   .city-card {

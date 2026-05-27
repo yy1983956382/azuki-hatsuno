@@ -4,13 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>红豆泥 | Azuki Hatsuno</title>
-    <link rel="stylesheet" href="styles.css?v=12" />
+    <link rel="stylesheet" href="styles.css?v=13" />
   </head>
   <body>
     <main class="site-frame">
       <header class="brand-header">
-        <h1>红豆泥</h1>
-        <p>Azuki Hatsuno</p>
+        <div class="brand-title">
+          <h1>红豆泥</h1>
+          <p>Azuki Hatsuno</p>
+        </div>
+        <aside class="word-corner" aria-label="单词角">
+          <div class="word-head">
+            <span class="word-term" data-field="word">wordlibrary</span>
+            <span class="word-phonetic" data-field="phonetic">loading</span>
+          </div>
+          <p class="word-meaning" data-field="wordZh">词库加载中</p>
+          <p class="word-meaning word-meaning-ja" lang="ja" data-field="wordJa">単語帳を読み込み中</p>
+        </aside>
       </header>
 
       <nav class="tabs" aria-label="首页分类">
@@ -81,6 +91,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=12"></script>
+    <script src="app.js?v=13"></script>
   </body>
 </html>
