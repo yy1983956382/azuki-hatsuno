@@ -65,6 +65,24 @@ const cityPhotoFolders = {
   },
 };
 
+const wheelStorageKey = "azuki-choice-wheel-options";
+const wheelMaxOptions = 8;
+const defaultWheelOptions = ["拉面", "咖喱", "寿司", "散步"];
+const wheelColors = [
+  "#f1c9c2",
+  "#f3d3a2",
+  "#dce3b2",
+  "#b8d8bd",
+  "#aed2dc",
+  "#b9cce4",
+  "#cfcbe6",
+  "#e7c4d8",
+];
+
+let wheelOptions = [];
+let wheelRotation = 0;
+let wheelSpinning = false;
+
 const weatherText = {
   0: "晴天",
   1: "大致晴朗",
@@ -238,6 +256,226 @@ async function loadWordCorner() {
       ja: "単語帳を読み込めません",
     });
   }
+}
+
+function normalizeWheelOptions(options) {
+  return options
+    .map((option) => String(option || "").trim())
+    .filter(Boolean)
+    .slice(0, wheelMaxOptions);
+}
+
+function getFallbackOptionName(index) {
+  return `选项${index + 1}`;
+}
+
+function getNewOptionName() {
+  return getFallbackOptionName(wheelOptions.length);
+}
+
+function getDisplayWheelOptions() {
+  return wheelOptions.map((option, index) => option.trim() || getFallbackOptionName(index));
+}
+
+function loadSavedWheelOptions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(wheelStorageKey) || "[]");
+    const options = Array.isArray(saved) ? normalizeWheelOptions(saved) : [];
+    return options.length ? options : defaultWheelOptions;
+  } catch {
+    return defaultWheelOptions;
+  }
+}
+
+function saveWheelOptions() {
+  localStorage.setItem(wheelStorageKey, JSON.stringify(wheelOptions));
+}
+
+function buildWheelGradient(options) {
+  if (!options.length) {
+    return "conic-gradient(#e9eeec 0deg 360deg)";
+  }
+
+  const segment = 360 / options.length;
+  return `conic-gradient(${options
+    .map((_, index) => {
+      const color = wheelColors[index % wheelColors.length];
+      const start = index * segment;
+      const end = (index + 1) * segment;
+      return `${color} ${start}deg ${end}deg`;
+    })
+    .join(", ")})`;
+}
+
+function buildWheelLines(options) {
+  if (options.length < 2) {
+    return "linear-gradient(transparent, transparent)";
+  }
+
+  const segment = 360 / options.length;
+  return `repeating-conic-gradient(from -0.45deg, rgba(31, 37, 40, 0.18) 0deg 0.9deg, transparent 0.9deg ${segment}deg)`;
+}
+
+function renderWheelLabels(wheelDisc, options) {
+  wheelDisc.innerHTML = "";
+  if (!options.length) return;
+
+  const segment = 360 / options.length;
+  options.forEach((option, index) => {
+    const label = document.createElement("span");
+    const angle = index * segment + segment / 2;
+    label.className = "wheel-label";
+    label.textContent = option;
+    label.style.setProperty(
+      "--label-transform",
+      `translate(-50%, -50%) rotate(${angle}deg) translateY(calc(-1 * var(--label-radius)))`,
+    );
+    wheelDisc.append(label);
+  });
+}
+
+function renderWheelVisual() {
+  const wheelDisc = document.querySelector("#choiceWheel");
+  if (!wheelDisc) return;
+
+  const displayOptions = getDisplayWheelOptions();
+  wheelDisc.style.setProperty("--wheel-gradient", buildWheelGradient(displayOptions));
+  wheelDisc.style.setProperty("--wheel-lines", buildWheelLines(displayOptions));
+  wheelDisc.style.setProperty("--wheel-rotation", `${wheelRotation}deg`);
+  renderWheelLabels(wheelDisc, displayOptions);
+}
+
+function renderOptionList() {
+  const optionList = document.querySelector('[data-field="optionList"]');
+  if (!optionList) return;
+
+  optionList.innerHTML = "";
+  wheelOptions.forEach((option, index) => {
+    const item = document.createElement("li");
+    const swatch = document.createElement("span");
+    const text = document.createElement("input");
+    const removeButton = document.createElement("button");
+
+    item.className = "option-item";
+    swatch.className = "option-swatch";
+    swatch.style.setProperty("--option-color", wheelColors[index % wheelColors.length]);
+    text.className = "option-text";
+    text.type = "text";
+    text.maxLength = 24;
+    text.value = option;
+    text.placeholder = getFallbackOptionName(index);
+    text.setAttribute("aria-label", `编辑${getFallbackOptionName(index)}`);
+    text.addEventListener("input", (event) => {
+      wheelOptions[index] = event.currentTarget.value;
+      if (event.currentTarget.value.trim()) saveWheelOptions();
+      renderWheelVisual();
+    });
+    text.addEventListener("blur", (event) => {
+      const nextValue = event.currentTarget.value.trim() || getFallbackOptionName(index);
+      wheelOptions[index] = nextValue;
+      saveWheelOptions();
+      renderWheel();
+    });
+    text.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") event.currentTarget.blur();
+    });
+    removeButton.className = "option-remove";
+    removeButton.type = "button";
+    removeButton.textContent = "×";
+    removeButton.setAttribute("aria-label", `删除 ${option}`);
+    removeButton.addEventListener("click", () => removeWheelOption(index));
+
+    item.append(swatch, text, removeButton);
+    optionList.append(item);
+  });
+}
+
+function renderWheel() {
+  const wheelDisc = document.querySelector("#choiceWheel");
+  const countNode = document.querySelector('[data-field="optionCount"]');
+  const addButton = document.querySelector('[data-action="addOption"]');
+  const spinButton = document.querySelector('[data-action="spinWheel"]');
+  if (!wheelDisc) return;
+
+  renderWheelVisual();
+  renderOptionList();
+
+  if (countNode) countNode.textContent = `${wheelOptions.length} / ${wheelMaxOptions}`;
+  if (addButton) addButton.disabled = wheelOptions.length >= wheelMaxOptions || wheelSpinning;
+  if (spinButton) spinButton.disabled = !wheelOptions.length || wheelSpinning;
+}
+
+function addWheelOption() {
+  const input = document.querySelector("#optionInput");
+  const value = input?.value.trim() || getNewOptionName();
+  if (wheelOptions.length >= wheelMaxOptions) return;
+
+  wheelOptions = normalizeWheelOptions([...wheelOptions, value]);
+  if (input) input.value = "";
+  saveWheelOptions();
+  renderWheel();
+}
+
+function removeWheelOption(index) {
+  if (wheelSpinning) return;
+  wheelOptions = wheelOptions.filter((_, optionIndex) => optionIndex !== index);
+  saveWheelOptions();
+  renderWheel();
+}
+
+function setWheelResult(text) {
+  const resultNode = document.querySelector('[data-field="wheelResult"]');
+  const centerNode = document.querySelector('[data-field="wheelCenter"]');
+  if (resultNode) resultNode.textContent = text;
+  if (centerNode) centerNode.textContent = text;
+}
+
+function spinWheel() {
+  const wheelDisc = document.querySelector("#choiceWheel");
+  if (!wheelDisc || !wheelOptions.length || wheelSpinning) return;
+
+  const displayOptions = getDisplayWheelOptions();
+  const winnerIndex = Math.floor(Math.random() * displayOptions.length);
+  const segment = 360 / displayOptions.length;
+  const winnerMid = winnerIndex * segment + segment / 2;
+  const currentMod = ((wheelRotation % 360) + 360) % 360;
+  const targetMod = (360 - winnerMid) % 360;
+  const delta = ((targetMod - currentMod + 360) % 360) + 360 * (5 + Math.floor(Math.random() * 3));
+
+  wheelSpinning = true;
+  wheelRotation += delta;
+  setWheelResult("旋转中");
+  renderWheel();
+
+  window.setTimeout(() => {
+    wheelSpinning = false;
+    setWheelResult(displayOptions[winnerIndex]);
+    renderWheel();
+  }, 4500);
+}
+
+function setupWheel() {
+  wheelOptions = loadSavedWheelOptions();
+  renderWheel();
+
+  document.querySelector('[data-action="addOption"]')?.addEventListener("click", addWheelOption);
+  document.querySelector('[data-action="spinWheel"]')?.addEventListener("click", spinWheel);
+  document.querySelector(".wheel-center")?.addEventListener("click", spinWheel);
+  document.querySelector("#optionInput")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") addWheelOption();
+  });
+}
+
+function updatePageMode() {
+  const hash = window.location.hash || "#weather";
+  const isWheelMode = hash === "#wheel";
+  document.body.classList.toggle("wheel-mode", isWheelMode);
+
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const href = tab.getAttribute("href");
+    const activeHref = isWheelMode ? "#wheel" : hash === "#notice" ? "#notice" : "#weather";
+    tab.classList.toggle("is-active", href === activeHref);
+  });
 }
 
 function parseChineseNumber(text) {
@@ -639,9 +877,12 @@ async function loadNote() {
 
 setRandomCityPhotos();
 loadWordCorner();
+setupWheel();
+updatePageMode();
 updateTime();
 loadWeather();
 loadNote();
+window.addEventListener("hashchange", updatePageMode);
 setInterval(updateTime, 1000);
 setInterval(loadWeather, 10 * 60 * 1000);
 setInterval(loadNote, 3000);
