@@ -423,6 +423,15 @@ function removeWheelOption(index) {
   renderWheel();
 }
 
+function resetWheelOptions() {
+  if (wheelSpinning) return;
+  wheelOptions = [...defaultWheelOptions];
+  wheelRotation = 0;
+  saveWheelOptions();
+  setWheelResult("等待选择");
+  renderWheel();
+}
+
 function setWheelResult(text) {
   const resultNode = document.querySelector('[data-field="wheelResult"]');
   const centerNode = document.querySelector('[data-field="wheelCenter"]');
@@ -460,6 +469,7 @@ function setupWheel() {
 
   document.querySelector('[data-action="addOption"]')?.addEventListener("click", addWheelOption);
   document.querySelector('[data-action="spinWheel"]')?.addEventListener("click", spinWheel);
+  document.querySelector('[data-action="resetWheel"]')?.addEventListener("click", resetWheelOptions);
   document.querySelector(".wheel-center")?.addEventListener("click", spinWheel);
   document.querySelector("#optionInput")?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") addWheelOption();
