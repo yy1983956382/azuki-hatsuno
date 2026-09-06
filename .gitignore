@@ -12,3 +12,13 @@ node_modules/
 *.log
 *.tmp
 ~$*.xlsx
+
+# Local project materials (not part of the published website)
+start-local-site.bat
+start-local-site.ps1
+start-public-site.bat
+wordlibrary.xlsx
+上网准备说明.txt
+网站基本资料.txt
+网站构思01.jpg
+项目日志.md
