@@ -1,0 +1,34 @@
+红豆泥网站上网准备说明
+
+一、只在本机访问
+双击 start-local-site.bat
+浏览器地址是：http://127.0.0.1:8787/index.html
+
+二、让同一 Wi-Fi / 局域网里的其他设备访问
+1. 双击 start-public-site.bat
+2. 不要关闭弹出的 PowerShell 窗口
+3. PowerShell 窗口里会显示类似：
+   Network URL: http://192.168.x.x:8787/index.html
+4. 其他手机或电脑连接同一个 Wi-Fi 后，在浏览器打开这个 Network URL
+5. 如果打不开，需要在 Windows 防火墙里允许 PowerShell 或端口 8787 的入站连接
+
+三、让互联网上的其他人访问
+还需要二选一：
+
+方案 A：路由器端口转发
+1. 运行 start-public-site.bat
+2. 在 Windows 防火墙里放行 TCP 8787 入站
+3. 在路由器管理页面设置端口转发：
+   外部端口 8787 -> 本机局域网 IP 的 8787 端口
+4. 其他人访问：
+   http://你的公网IP:8787/index.html
+
+注意：如果你的宽带没有公网 IP，或者运营商做了 NAT，端口转发可能无法从外网访问。
+
+方案 B：内网穿透 / 隧道
+可以使用 Cloudflare Tunnel、ngrok、Tailscale Funnel 等工具，把本机 8787 端口映射到一个公网地址。
+这种方式通常不需要改路由器设置，更适合家庭网络。
+
+安全提醒：
+当前服务器只适合测试和学习。它会把这个文件夹里的网页、图片、CSS、JS、txt 文件提供给访问者。
+不要把密码、证件、私人文件放进这个网站文件夹。

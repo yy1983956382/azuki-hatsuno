@@ -554,7 +554,14 @@ body.wheel-mode .site-frame {
   box-shadow: 0 12px 24px rgba(31, 37, 40, 0.13);
   font-size: clamp(0.9rem, 1.9vw, 1.2rem);
   font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
+  appearance: none;
+}
+
+.wheel-center:focus-visible {
+  outline: 3px solid rgba(49, 111, 158, 0.45);
+  outline-offset: 4px;
 }
 
 .wheel-result {

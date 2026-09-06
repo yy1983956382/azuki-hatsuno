@@ -13,7 +13,6 @@ const cities = {
       advice: "出门前留意天气",
       source: "本地兜底",
     },
-    cmaStationId: "58457",
   },
   hadano: {
     name: "秦野",
@@ -47,6 +46,7 @@ const cityPhotoFolders = {
       "photolibrary/hangzhou/hangzhou04.jpg",
       "photolibrary/hangzhou/hangzhou05.jpg",
       "photolibrary/hangzhou/hangzhou06.jpg",
+      "photolibrary/hangzhou/hangzhou07.jpg",
     ],
   },
   hadano: {
@@ -484,7 +484,13 @@ function updatePageMode() {
   document.querySelectorAll(".tab").forEach((tab) => {
     const href = tab.getAttribute("href");
     const activeHref = isWheelMode ? "#wheel" : hash === "#notice" ? "#notice" : "#weather";
-    tab.classList.toggle("is-active", href === activeHref);
+    const isActive = href === activeHref;
+    tab.classList.toggle("is-active", isActive);
+    if (isActive) {
+      tab.setAttribute("aria-current", "page");
+    } else {
+      tab.removeAttribute("aria-current");
+    }
   });
 }
 
@@ -626,24 +632,14 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = weatherRequestTim
 
 async function fetchJson(url, timeoutMs) {
   const response = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
-  if (!response.ok) throw new Error(`Weather request failed: ${url}`);
+  if (!response.ok) throw new Error(`Request failed: ${url}`);
   return response.json();
 }
 
 async function fetchText(url, timeoutMs) {
   const response = await fetchWithTimeout(url, { cache: "no-store" }, timeoutMs);
-  if (!response.ok) throw new Error(`Weather request failed: ${url}`);
+  if (!response.ok) throw new Error(`Request failed: ${url}`);
   return response.text();
-}
-
-function getLocalHour(timezone) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    hour: "2-digit",
-    hour12: false,
-  }).formatToParts(new Date());
-  const hour = Number(parts.find((part) => part.type === "hour")?.value);
-  return Number.isFinite(hour) ? hour % 24 : 12;
 }
 
 function buildWeatherText({ summary, temp, advice }) {
@@ -658,25 +654,6 @@ function getFallbackWeather(city) {
     temp: null,
     advice: "出门前留意天气",
     source: "本地兜底",
-  };
-}
-
-async function fetchCmaWeather(city) {
-  const data = await fetchJson(
-    `https://weather.cma.cn/api/weather/view?stationid=${city.cmaStationId}`,
-    3000,
-  );
-  if (data.code !== 0 || !data.data) throw new Error("CMA data unavailable");
-
-  const localHour = getLocalHour(city.timezone);
-  const today = data.data.daily?.[0] || {};
-  const summary = localHour >= 18 || localHour < 6 ? today.nightText : today.dayText;
-  const temp = Number(data.data.now?.temperature ?? today.high ?? today.low);
-
-  return {
-    summary,
-    temp,
-    source: "中国气象局",
   };
 }
 
@@ -819,21 +796,6 @@ async function fetchWeather(city) {
       () => fetchWttrWeather(city),
       () => fetchOpenMeteoWeather(city),
     ]).catch(() => getFallbackWeather(city));
-  }
-
-  if (city.weatherProvider === "fast") {
-    return fetchFirstAvailable([
-      () => fetchWttrWeather(city),
-      () => fetchOpenMeteoWeather(city),
-      () => fetchCmaWeather(city),
-    ]);
-  }
-
-  if (city.weatherProvider === "cma") {
-    return fetchFirstAvailable([
-      () => fetchCmaWeather(city),
-      () => fetchOpenMeteoWeather(city),
-    ]);
   }
 
   if (city.weatherProvider === "jma") {
