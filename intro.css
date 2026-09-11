@@ -1,0 +1,47 @@
+.brand-title h1 { margin: 0; line-height: 0; }
+.brand-logo { display: block; width: min(100%, 420px); height: auto; }
+
+/* A real page stays underneath; the flight target is its actual logo bounds. */
+.intro-pending { overflow: hidden; }
+.intro-pending.intro-revealing { overflow-y: auto; }
+.intro-pending .site-frame { visibility: hidden; }
+.intro-pending .brand-logo { visibility: hidden; }
+.azuki-intro-logo { visibility: visible; }
+.azuki-intro { position: fixed; inset: 0; z-index: 1000; background: #fff; }
+.azuki-intro-logo { position: absolute; overflow: visible; transform-origin: 0 0; }
+.azuki-intro-hint {
+  position: absolute;
+  top: clamp(18px, 2.4vw, 30px);
+  right: clamp(18px, 2.8vw, 38px);
+  margin: 0;
+  color: rgba(38, 42, 45, .28);
+  font: 400 12px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  opacity: 0;
+  user-select: none;
+}
+.intro-revealing .site-frame { visibility: visible; }
+.intro-revealing .brand-logo { visibility: hidden; }
+
+@keyframes content-arrive {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .intro-revealing .word-corner,
+  .intro-revealing .tabs,
+  .intro-revealing .city-card,
+  .intro-revealing .notice-section,
+  .intro-revealing .wheel-section {
+    animation: content-arrive 520ms cubic-bezier(.22,1,.36,1) both;
+  }
+  .intro-revealing .tabs { animation-delay: 56ms; }
+  .intro-revealing .city-card:nth-child(1) { animation-delay: 112ms; }
+  .intro-revealing .city-card:nth-child(2) { animation-delay: 176ms; }
+  .intro-revealing .notice-section { animation-delay: 232ms; }
+}
+
+@media (max-width: 480px) {
+  .azuki-intro-hint { font-size: 11px; }
+}

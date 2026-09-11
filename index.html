@@ -5,14 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>红豆泥 | Azuki Hatsuno</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=18" />
+    <link rel="stylesheet" href="styles.css?v=22" />
+    <link rel="stylesheet" href="intro.css?v=10" />
+    <script>
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('intro-pending');
+        window.azukiIntroFallback = setTimeout(() => {
+          document.documentElement.classList.remove('intro-pending', 'intro-revealing');
+          document.getElementById('azukiIntro')?.remove();
+          document.querySelector('.site-frame')?.removeAttribute('inert');
+        }, 8000);
+      }
+    </script>
+    <script src="graphic/logo/azuki-logo-draw.js?v=16" defer></script>
+    <script src="intro.js?v=14" defer></script>
   </head>
   <body>
     <main class="site-frame">
       <header class="brand-header">
         <div class="brand-title">
-          <h1>红豆泥</h1>
-          <p>Azuki Hatsuno</p>
+          <h1><img class="brand-logo" src="graphic/logo/azuki-logo.svg" width="1125" height="294" alt="Azuki" /></h1>
         </div>
         <aside class="word-corner" aria-label="单词角">
           <div class="word-head">
@@ -130,6 +142,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=18"></script>
+    <script src="app.js?v=19"></script>
   </body>
 </html>
