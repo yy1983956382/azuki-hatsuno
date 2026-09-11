@@ -54,6 +54,7 @@
     page.inert = false;
     overlay.remove();
     activeAnimations.forEach(animation => animation.cancel());
+    overlay.removeEventListener('click', onClick);
     window.removeEventListener('resize', onResize);
     window.removeEventListener('keydown', onKey);
     reduced.removeEventListener('change', finish);
@@ -61,6 +62,10 @@
 
   const onKey = event => {
     if (event.key === 'Escape') finish();
+  };
+
+  const onClick = event => {
+    if (event.button === 0) finish();
   };
 
   async function play() {
@@ -172,6 +177,7 @@
 
   window.addEventListener('resize', onResize);
   window.addEventListener('keydown', onKey);
+  overlay.addEventListener('click', onClick);
   reduced.addEventListener('change', finish);
   requestAnimationFrame(play);
 })();
