@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>红豆泥 | Azuki Hatsuno</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=22" />
+    <link rel="stylesheet" href="styles.css?v=23" />
     <link rel="stylesheet" href="intro.css?v=10" />
     <script>
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -27,6 +27,14 @@
           <h1><img class="brand-logo" src="graphic/logo/azuki-logo.svg" width="1125" height="294" alt="Azuki" /></h1>
         </div>
         <aside class="word-corner" aria-label="单词角">
+          <div class="word-controls" aria-label="切换单词卡片">
+            <button class="word-control" type="button" data-action="previousWord" aria-label="上一张单词卡片" title="上一张" disabled>
+              <span aria-hidden="true">‹</span>
+            </button>
+            <button class="word-control" type="button" data-action="nextWord" aria-label="下一张单词卡片" title="下一张" disabled>
+              <span aria-hidden="true">›</span>
+            </button>
+          </div>
           <div class="word-head">
             <span class="word-term" data-field="word">wordlibrary</span>
             <span class="word-phonetic" data-field="phonetic">loading</span>
@@ -142,6 +150,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=19"></script>
+    <script src="app.js?v=20"></script>
   </body>
 </html>

@@ -81,6 +81,7 @@ body {
 }
 
 .word-corner {
+  position: relative;
   justify-self: end;
   width: 100%;
   max-width: 360px;
@@ -95,7 +96,57 @@ body {
   align-items: baseline;
   gap: 0.65rem;
   min-width: 0;
+  padding-right: 72px;
   flex-wrap: wrap;
+}
+
+.word-controls {
+  position: absolute;
+  top: 11px;
+  right: 12px;
+  display: flex;
+  gap: 5px;
+}
+
+.word-control {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(31, 37, 40, 0.11);
+  border-radius: 6px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.42);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.word-control span {
+  margin-top: -2px;
+  font-size: 1.45rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.word-control:hover:not(:disabled) {
+  border-color: rgba(31, 37, 40, 0.22);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.word-control:focus-visible {
+  outline: 3px solid rgba(49, 111, 158, 0.2);
+  outline-offset: 2px;
+}
+
+.word-control:disabled {
+  cursor: default;
+  opacity: 0.32;
 }
 
 .word-term {
@@ -871,6 +922,11 @@ body.wheel-mode .site-frame {
 
   .word-corner {
     padding: 12px 14px;
+  }
+
+  .word-controls {
+    top: 9px;
+    right: 10px;
   }
 
   .word-term {

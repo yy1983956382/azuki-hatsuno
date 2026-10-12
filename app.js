@@ -82,6 +82,9 @@ const wheelColors = [
 let wheelOptions = [];
 let wheelRotation = 0;
 let wheelSpinning = false;
+let wordLibrary = [];
+let wordHistory = [];
+let wordHistoryIndex = -1;
 
 const weatherText = {
   0: "晴天",
@@ -238,6 +241,58 @@ function setWordCorner(entry) {
   jaNode.textContent = entry.ja || "日本語訳はまだありません";
 }
 
+function updateWordControls() {
+  const previousButton = document.querySelector('[data-action="previousWord"]');
+  const nextButton = document.querySelector('[data-action="nextWord"]');
+  if (previousButton) previousButton.disabled = wordHistoryIndex <= 0;
+  if (nextButton) nextButton.disabled = !wordLibrary.length;
+}
+
+function showWordAtHistoryIndex() {
+  const libraryIndex = wordHistory[wordHistoryIndex];
+  const entry = wordLibrary[libraryIndex];
+  if (entry) setWordCorner(entry);
+  updateWordControls();
+}
+
+function getRandomWordIndex() {
+  if (wordLibrary.length < 2) return 0;
+
+  const currentIndex = wordHistory[wordHistoryIndex];
+  let nextIndex = currentIndex;
+  while (nextIndex === currentIndex) {
+    nextIndex = Math.floor(Math.random() * wordLibrary.length);
+  }
+  return nextIndex;
+}
+
+function showPreviousWord() {
+  if (wordHistoryIndex <= 0) return;
+  wordHistoryIndex -= 1;
+  showWordAtHistoryIndex();
+}
+
+function showNextWord() {
+  if (!wordLibrary.length) return;
+
+  if (wordHistoryIndex < wordHistory.length - 1) {
+    wordHistoryIndex += 1;
+    showWordAtHistoryIndex();
+    return;
+  }
+
+  wordHistory.push(getRandomWordIndex());
+  if (wordHistory.length > 50) wordHistory.shift();
+  wordHistoryIndex = wordHistory.length - 1;
+  showWordAtHistoryIndex();
+}
+
+function setupWordCornerControls() {
+  document.querySelector('[data-action="previousWord"]')?.addEventListener("click", showPreviousWord);
+  document.querySelector('[data-action="nextWord"]')?.addEventListener("click", showNextWord);
+  updateWordControls();
+}
+
 async function loadWordCorner() {
   try {
     const words = await fetchJson(`wordlibrary.json?time=${Date.now()}`, 5000);
@@ -246,15 +301,21 @@ async function loadWordCorner() {
       : [];
     if (!usableWords.length) throw new Error("Word library is empty");
 
-    const entry = usableWords[Math.floor(Math.random() * usableWords.length)];
-    setWordCorner(entry);
+    wordLibrary = usableWords;
+    wordHistory = [];
+    wordHistoryIndex = -1;
+    showNextWord();
   } catch {
+    wordLibrary = [];
+    wordHistory = [];
+    wordHistoryIndex = -1;
     setWordCorner({
       word: "wordlibrary",
       phonetic: "",
       zh: "词库暂时无法读取",
       ja: "単語帳を読み込めません",
     });
+    updateWordControls();
   }
 }
 
@@ -848,6 +909,7 @@ async function loadNote() {
 }
 
 setRandomCityPhotos();
+setupWordCornerControls();
 loadWordCorner();
 setupWheel();
 updatePageMode();
